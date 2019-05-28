@@ -26,8 +26,8 @@ int cwStage = -1;
   
   EthernetUDP Udp;
   //the Arduino's IP
-  
-  IPAddress ip(169, 254, 255, 100+ID);
+  int ip_end = 100 + ID;
+  IPAddress ip(169, 254, 255, ip_end);
 
   //destination IP
   IPAddress outIp(169, 254, 255, 255);
