@@ -26,21 +26,34 @@ int cwStage = -1;
   
   EthernetUDP Udp;
   //the Arduino's IP
-  int ip_end = 100 + ID;
-  IPAddress ip(169, 254, 255, ip_end);
+  int ip_end = 20 + ID;
+
+  IPAddress ip(192, 168, 100, ip_end);
 
   //destination IP
-  IPAddress outIp(169, 254, 255, 255);
+  IPAddress outIp(192, 168, 100, 255);
+  //destination PORT
+  const unsigned int outPort = 9001;
+  
+  IPAddress subnet(255, 255, 255, 0);
+  IPAddress gateway(192, 168, 100, 1);
+  
+/*
+ int ip_end = 100 + ID;
+  IPAddress ip(169, 254, 159, ip_end);
+
+  //destination IP
+  IPAddress outIp(169, 254, 159, 255);
   //destination PORT
   const unsigned int outPort = 9001;
   
   IPAddress subnet(255, 255, 0, 0);
   IPAddress gateway(169, 254, 0, 1);
-
+ */
   byte mac[] = {
   0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED
 }; // you can find this written on the board of some Arduino Ethernets or shields
-  
+ 
   OSCMessage msgCW("/dir/cw");
   OSCMessage msgACW("/dir/acw");
   OSCMessage msgTest("/dir/test");
