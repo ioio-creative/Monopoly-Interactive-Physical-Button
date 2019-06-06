@@ -16,47 +16,50 @@ int acwStage = -1;
 int cwStage = -1;
 
 
+long prevLMillis = 0;
+long prevRMillis = 0;
+
 #ifdef USE_OSC
-  #include <OSCMessage.h>
-  #include <Ethernet.h>
-  #include <EthernetUdp.h>
-  #include <SPI.h>
-  
-  #define DELAY_RESET 500
-  
-  EthernetUDP Udp;
-  //the Arduino's IP
-  int ip_end = 20 + ID;
+#include <OSCMessage.h>
+#include <Ethernet.h>
+#include <EthernetUdp.h>
+#include <SPI.h>
 
-  IPAddress ip(192, 168, 100, ip_end);
+#define DELAY_RESET 500
 
-  //destination IP
-  IPAddress outIp(192, 168, 100, 255);
-  //destination PORT
-  const unsigned int outPort = 9001;
-  
-  IPAddress subnet(255, 255, 255, 0);
-  IPAddress gateway(192, 168, 100, 1);
-  
+EthernetUDP Udp;
+//the Arduino's IP
+int ip_end = 20 + ID;
+
+IPAddress ip(192, 168, 100, ip_end);
+
+//destination IP
+IPAddress outIp(192, 168, 100, 255);
+//destination PORT
+const unsigned int outPort = 9001;
+
+IPAddress subnet(255, 255, 255, 0);
+IPAddress gateway(192, 168, 100, 1);
+
 /*
- int ip_end = 100 + ID;
+  int ip_end = 100 + ID;
   IPAddress ip(169, 254, 159, ip_end);
 
   //destination IP
   IPAddress outIp(169, 254, 159, 255);
   //destination PORT
   const unsigned int outPort = 9001;
-  
+
   IPAddress subnet(255, 255, 0, 0);
   IPAddress gateway(169, 254, 0, 1);
- */
-  byte mac[] = {
+*/
+byte mac[] = {
   0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED
 }; // you can find this written on the board of some Arduino Ethernets or shields
- 
-  OSCMessage msgCW("/dir/cw");
-  OSCMessage msgACW("/dir/acw");
-  OSCMessage msgTest("/dir/test");
+
+OSCMessage msgCW("/dir/cw");
+OSCMessage msgACW("/dir/acw");
+OSCMessage msgTest("/dir/test");
 
 #endif
 
@@ -113,6 +116,7 @@ void loop()
   if (prevL != valL) {
     if (prevL == LOW) {
       isLOn = true;
+      prevLMillis = millis();
     } else {
 
     }
@@ -121,22 +125,34 @@ void loop()
   if (prevR != valR) {
     if (prevL == LOW) {
       isROn = true;
+          prevRMillis = millis();
     } else {
 
     }
     prevR = valR;
   }
-
+  if (millis() - prevLMillis > 500 && acwStage == 0) {
+    acwStage = -1;
+    isLOn = false;
+    //Serial.println("ACW cancelled");
+  }
+  if (millis() - prevRMillis > 500 && cwStage == 0) {
+    cwStage = -1;
+    isROn = false;
+    //Serial.println("CW cancelled");
+  }
   if (isLOn && !isROn) {
     acwStage = 0;
+    //Serial.println("ACW Stage 0");
   }
   if (isROn && !isLOn) {
     cwStage = 0;
+     //   Serial.println("CW Stage 0");
   }
-  if (acwStage == 0 && isROn) {
+  if (acwStage == 0 && isROn  && millis() - prevRMillis < 250) {
     acwStage = 1;
   }
-  if (cwStage == 0 && isLOn) {
+  if (cwStage == 0 && isLOn  && millis() - prevLMillis < 250) {
     cwStage = 1;
   }
 
@@ -147,12 +163,12 @@ void loop()
 
 #ifdef USE_OSC
     msgACW.add((int32_t)ID);
-  
+
     Udp.beginPacket(outIp, outPort);
     msgACW.send(Udp); // send the bytes to the SLIP stream
     Udp.endPacket(); // mark the end of the OSC Packet
     msgACW.empty(); // free space occupied by message
-  
+
 #endif
 
     cwStage = -1;
@@ -166,12 +182,12 @@ void loop()
 
 #ifdef USE_OSC
     msgCW.add((int32_t)ID);
-  
+
     Udp.beginPacket(outIp, outPort);
     msgCW.send(Udp); // send the bytes to the SLIP stream
     Udp.endPacket(); // mark the end of the OSC Packet
     msgCW.empty(); // free space occupied by message
-  
+
 #endif
     acwStage = -1;
     isLOn = false;
@@ -183,28 +199,28 @@ void loop()
 
 
   if (Serial.available() > 0) {
-      // get incoming byte:
-      char inByte = Serial.read();
-      if(inByte == 'p'){
+    // get incoming byte:
+    char inByte = Serial.read();
+    if (inByte == 'p') {
 #ifdef USE_OSC
-        testOSC();
+      testOSC();
 #endif
     }
   }
 }
 #ifdef USE_OSC
-  void testOSC() {
-    digitalWrite(LEDPin, HIGH);
-  
-    msgTest.add((int32_t)ID);
-  
-    Udp.beginPacket(outIp, outPort);
-    msgTest.send(Udp); // send the bytes to the SLIP stream
-    Udp.endPacket(); // mark the end of the OSC Packet
-    msgTest.empty(); // free space occupied by message
-  
-    Serial.println("test OSC");
-    digitalWrite(LEDPin, LOW);
+void testOSC() {
+  digitalWrite(LEDPin, HIGH);
 
-  }
+  msgTest.add((int32_t)ID);
+
+  Udp.beginPacket(outIp, outPort);
+  msgTest.send(Udp); // send the bytes to the SLIP stream
+  Udp.endPacket(); // mark the end of the OSC Packet
+  msgTest.empty(); // free space occupied by message
+
+  Serial.println("test OSC");
+  digitalWrite(LEDPin, LOW);
+
+}
 #endif
