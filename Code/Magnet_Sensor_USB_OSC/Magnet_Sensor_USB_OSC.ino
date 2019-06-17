@@ -99,6 +99,7 @@ void setup()
 int valL, valR;
 void loop()
 {
+  
   valL = digitalRead(magPinL);
   valR = digitalRead(magPinR);
   /*
